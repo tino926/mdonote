@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Rich Text Editor</title>
+  <meta charset="utf-8">
+  <script src="https://cdn.jsdelivr.net/npm/showdown@1.9.1/dist/showdown.min.js"></script>
+  <style>
+    html, body {
+      height: 100%;
+      margin: 0;
+    }
+    .container {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+    }
+    .top-pane {
+      display: flex;
+      height: 80%;
+    }
+    .editor, .preview {
+      width: 50%;
+      height: 100%;
+      padding: 10px;
+      border: 1px solid #ccc;
+      box-sizing: border-box;
+    }
+    .bottom-pane {
+      height: 20%;
+      border: 1px solid #ccc;
+      padding: 10px;
+      box-sizing: border-box;
+      overflow-y: auto;
+    }
+    .attachment-list {
+      list-style-type: none;
+      padding: 0;
+    }
+    .attachment-item {
+      margin-bottom: 5px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="top-pane">
+      <textarea class="editor" placeholder="Enter Markdown here..."></textarea>
+      <div class="preview"></div>
+    </div>
+    <div class="bottom-pane">
+      <h3>Attachments</h3>
+      <ul class="attachment-list"></ul>
+    </div>
+  </div>
+
+  <input type="file" id="fileInput" style="display: none;">
+
+  <script>
+    const editor = document.querySelector('.editor');
+    const preview = document.querySelector('.preview');
+    const attachmentList = document.querySelector('.attachment-list');
+    const fileInput = document.getElementById('fileInput');
+
+    let attachments = []; // Array to store attachment data
+
+    // Initialize Showdown converter
+    const converter = new showdown.Converter();
+
+    // Function to update the preview
+    const updatePreview = () => {
+      const markdownText = editor.value;
+      const html = converter.makeHtml(markdownText);
+      preview.innerHTML = html;
+    };
+
+    // Function to add an attachment
+    const addAttachment = (file) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        attachments.push({
+          name: file.name,
+          data: e.target.result
+        });
+        updateAttachmentList();
+        insertAttachmentReference(file.name);
+      };
+      reader.readAsDataURL(file);
+    };
+
+    // Function to insert attachment reference in editor
+    const insertAttachmentReference = (filename) => {
+      const attachmentRef = `![${filename}](attachment:${filename})`;
+      const currentText = editor.value;
+      editor.value = currentText + attachmentRef;
+      updatePreview();
+    };
+
+    // Function to update the attachment list in the UI
+    const updateAttachmentList = () => {
+      attachmentList.innerHTML = '';
+      attachments.forEach(attachment => {
+        const listItem = document.createElement('li');
+        listItem.className = 'attachment-item';
+        listItem.textContent = attachment.name;
+        attachmentList.appendChild(listItem);
+      });
+    };
+
+    // Event listeners
+    editor.addEventListener('input', updatePreview);
+    fileInput.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (file) {
+        addAttachment(file);
+      }
+    });
+
+    // Function to trigger file input click
+    const openFilePicker = () => {
+      fileInput.click();
+    };
+
+    // Example implementation for saving the document
+    const saveDocument = () => {
+      const content = editor.value;
+      const blob = new Blob([JSON.stringify({ content, attachments })], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'document.json';
+      link.click();
+    };
+
+    // Add an event listener to a button or menu item to trigger saving
+    const saveButton = document.createElement('button');
+    saveButton.textContent = 'Save Document';
+    saveButton.addEventListener('click', saveDocument);
+    document.body.appendChild(saveButton);
+
+    // Example implementation for opening the document
+    const openDocument = () => {
+      // Implement logic to open and parse the saved JSON document
+      // Update the editor, attachments, and attachment list accordingly
+    };
+
+    // Add an event listener to a button or menu item to trigger opening
+    const openButton = document.createElement('button');
+    openButton.textContent = 'Open Document';
+    openButton.addEventListener('click', openDocument);
+    document.body.appendChild(openButton);
+
+  </script>
+</body>
+</html>
